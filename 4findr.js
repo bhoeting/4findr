@@ -182,34 +182,34 @@ if (Meteor.isServer) {
       // Fetch the classes for a certain deptartment
       let classesOfDept = HTTP.get(sprintf(CLASSES_URL, dept.short, deptId)).data;
       if (!classesOfDept) continue;
-			classes.push.apply(classes, classesOfDept);
+      classes.push.apply(classes, classesOfDept);
     }
 
-		return classes;
+    return classes;
   };
 
-	/**
-	 * Delete all the data in each collection
-	 */
+  /**
+   * Delete all the data in each collection
+   */
 
-	var clearData = function () {
-		Courses.remove({});
-		Classes.remove({});
-		Subjects.remove({});
-		Professors.remove({});
-	};
+  var clearData = function () {
+    Courses.remove({});
+    Classes.remove({});
+    Subjects.remove({});
+    Professors.remove({});
+  };
 
   /**
    * Save the subjects in the DB
    */
 
   var persistSubjects = function (subjectsArr) {
-		for (let subject of subjectsArr) {
-			Subjects.insert({
-				title: subject.title,
-				short: subject.short
-			});
-		}
+    for (let subject of subjectsArr) {
+      Subjects.insert({
+	title: subject.title,
+	short: subject.short
+      });
+    }
   };
 
   /**
@@ -217,82 +217,82 @@ if (Meteor.isServer) {
    */
 
   var persistRawClassData = function (data) {
-		// Create courses/professors/classes
+    // Create courses/professors/classes
     for (let clazz of data) {
-			// Get the subject
-			let subject = Subjects.findOne({short: clazz.NameShort});
-			if (!subject) continue;
-			let subjectId = subject.id;
+      // Get the subject
+      let subject = Subjects.findOne({short: clazz.NameShort});
+      if (!subject) continue;
+      let subjectId = subject.id;
 
-			// Try to get the course, if it doesn't exist create it
-			let courseId = Random.id();
-			let course = Courses.findOne({title: clazz.Title});
-			if (!course) {
-				course = Courses.insert({
-					_id: courseId,
-					gpa: 0.0, // we'll set this later
-					title: clazz.Title,
-					short: clazz.NameShort,
-					number: clazz.number,
-					subjectId: subject._id
-				});
-			} else {
-				courseId = course._id;
-			}
+      // Try to get the course, if it doesn't exist create it
+      let courseId = Random.id();
+      let course = Courses.findOne({title: clazz.Title});
+      if (!course) {
+	course = Courses.insert({
+	  _id: courseId,
+	  gpa: 0.0, // we'll set this later
+	  title: clazz.Title,
+	  short: clazz.NameShort,
+	  number: clazz.number,
+	  subjectId: subject._id
+	});
+      } else {
+	courseId = course._id;
+      }
 
-			// Try to get the professor, if it doesn't exist create it
-			let professorId = Random.id();
-			let professor = Professors.findOne({name: data.name});	
-			if (!professor) {
-				Professors.insert({
-					_id: professorId,
-					name: clazz.name
-				});
-			} else {
-				professorId = professor._id;
-			}
+      // Try to get the professor, if it doesn't exist create it
+      let professorId = Random.id();
+      let professor = Professors.findOne({name: data.name});	
+      if (!professor) {
+	Professors.insert({
+	  _id: professorId,
+	  name: clazz.name
+	});
+      } else {
+	professorId = professor._id;
+      }
 
-			// Insert the class
-			Classes.insert({
-				gpa: clazz.avggpa,
-				courseId: course._id,
-				professorId: professorId
-			});
+      // Insert the class
+      Classes.insert({
+	gpa: clazz.avggpa,
+	courseId: course._id,
+	professorId: professorId
+      });
     }
 
-		// Set the GPA for all the courses
-		let coursesArr = Courses.find({}).fetch();
-		for (let course of coursesArr) {
-			let gpa = 0.0;
-			let classesArr = Classes.find({courseId: course._id}).fetch();
-			for (classObj of classesArr) {
-				gpa += classObj.gpa;
-			}
+    // Set the GPA for all the courses
+    let coursesArr = Courses.find({}).fetch();
+    for (let course of coursesArr) {
+      let gpa = 0.0;
+      let classesArr = Classes.find({courseId: course._id}).fetch();
+      for (classObj of classesArr) {
+	gpa += classObj.gpa;
+      }
 
-			gpa /= classesArr.length;
-			if (isNaN(gpa)) {
-				// Remove courses with a 0.0 average GPA
-				Courses.remove({_id: course._id});
-			} else {
-				Courses.update({_id: course._id}, {gpa: gpa});
-			}
-		}
+      gpa /= classesArr.length;
+      if (isNaN(gpa)) {
+	// Remove courses with a 0.0 average GPA
+	Courses.remove({_id: course._id});
+      } else {
+	Courses.update({_id: course._id}, {gpa: gpa});
+      }
+    }
   };
 
   Meteor.startup(function () {
-		// Reset DB
-		clearData();
+    // Reset DB
+    clearData();
 
-		// Persist the subjects
-		persistSubjects(DEPTARTMENTS);
+    // Persist the subjects
+    persistSubjects(DEPTARTMENTS);
 
-		// Persist the classes/courses/professors
+    // Persist the classes/courses/professors
     let data = fetchRawClassData();
-		if (undefined === data) {
-			console.error('Raw class data is undefined');
-		} else {
-			persistRawClassData(data);
-		}
+    if (undefined === data) {
+      console.error('Raw class data is undefined');
+    } else {
+      persistRawClassData(data);
+    }
   });
 }
 
