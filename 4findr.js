@@ -20,22 +20,21 @@ var Professors = new Mongo.Collection('professors');
  * | title:      $string |
  * | short:      $string |
  * | number:     $number |
- * | subject_id: $number |
+ * | subjectId:  $number |
  * |---------------------|
 
  * |-----Classes------------|
  * | _id:           $string |
  * | gpa:           $number |
- * | course_id:     $number |
- * | professor_id:  $number |
+ * | courseId:      $number |
+ * | professorId:   $number |
  * |------------------------|
  *
- * |-----Subject------------|
- * | _id:           $string |
- * | gpa:           $number |
- * | short:         $string |
- * | number:        $number |
- * |------------------------|
+ * |-----Subject-------------|
+ * | _id:           $string  |
+ * | title:         $string  |
+ * | short:         $string  |
+ * |-------------------------|
  *
  * |---Professor---|
  * | _id:  $string |
@@ -171,26 +170,129 @@ if (Meteor.isServer) {
    * @return {array} The raw data in JSON format
    */
 
-  var getRawData = function () {
-    let classes = [];
+  var fetchRawClassData = function () {
+    var classes = [];
     for (dept of DEPTARTMENTS) {
       // Fetch the department ID for the next request
       let deptId = HTTP.get(sprintf(DEPT_ID_URL, dept.short)).data[0];
-      if (!deptId) return;
+      if (!deptId) continue;
       deptId = deptId.did;
-      if (deptId == -1) return;
+      if (deptId == -1) continue;
 
       // Fetch the classes for a certain deptartment
-      let classesOfDept = HTTP.get(sprintf(CLASSES_URL, dept.short, deptId));
-      if (!classesOfDept) return;
-      classes = classes.concat(classesOfDept);
+      let classesOfDept = HTTP.get(sprintf(CLASSES_URL, dept.short, deptId)).data;
+      if (!classesOfDept) continue;
+			classes.push.apply(classes, classesOfDept);
     }
-    return classes;
-  }
+
+		return classes;
+  };
+
+	/**
+	 * Delete all the data in each collection
+	 */
+
+	var clearData = function () {
+		Courses.remove({});
+		Classes.remove({});
+		Subjects.remove({});
+		Professors.remove({});
+	};
+
+  /**
+   * Save the subjects in the DB
+   */
+
+  var persistSubjects = function (subjectsArr) {
+		for (let subject of subjectsArr) {
+			Subjects.insert({
+				title: subject.title,
+				short: subject.short
+			});
+		}
+  };
+
+  /**
+   * Save the raw class data the the DB
+   */
+
+  var persistRawClassData = function (data) {
+		// Create courses/professors/classes
+    for (let clazz of data) {
+			// Get the subject
+			let subject = Subjects.findOne({short: clazz.NameShort});
+			if (!subject) continue;
+			let subjectId = subject.id;
+
+			// Try to get the course, if it doesn't exist create it
+			let courseId = Random.id();
+			let course = Courses.findOne({title: clazz.Title});
+			if (!course) {
+				course = Courses.insert({
+					_id: courseId,
+					gpa: 0.0, // we'll set this later
+					title: clazz.Title,
+					short: clazz.NameShort,
+					number: clazz.number,
+					subjectId: subject._id
+				});
+			} else {
+				courseId = course._id;
+			}
+
+			// Try to get the professor, if it doesn't exist create it
+			let professorId = Random.id();
+			let professor = Professors.findOne({name: data.name});	
+			if (!professor) {
+				Professors.insert({
+					_id: professorId,
+					name: clazz.name
+				});
+			} else {
+				professorId = professor._id;
+			}
+
+			// Insert the class
+			Classes.insert({
+				gpa: clazz.avggpa,
+				courseId: course._id,
+				professorId: professorId
+			});
+    }
+
+		// Set the GPA for all the courses
+		let coursesArr = Courses.find({}).fetch();
+		for (let course of coursesArr) {
+			let gpa = 0.0;
+			let classesArr = Classes.find({courseId: course._id}).fetch();
+			for (classObj of classesArr) {
+				gpa += classObj.gpa;
+			}
+
+			gpa /= classesArr.length;
+			if (isNaN(gpa)) {
+				// Remove courses with a 0.0 average GPA
+				Courses.remove({_id: course._id});
+			} else {
+				Courses.update({_id: course._id}, {gpa: gpa});
+			}
+		}
+  };
 
   Meteor.startup(function () {
-    var data = getRawData();
-    console.log(data);
+		// Reset DB
+		clearData();
+
+		// Persist the subjects
+		persistSubjects(DEPTARTMENTS);
+
+		// Persist the classes/courses/professors
+    let data = fetchRawClassData();
+		if (undefined === data) {
+			console.error('Raw class data is undefined');
+		} else {
+			persistRawClassData(data);
+		}
   });
 }
 
