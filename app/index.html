@@ -86,13 +86,6 @@
           courses: []
         },
 
-        ready: function() {
-          this.$http.get('/api/v1/courses', function (data, status, request) {
-            this.$set('courses', data.results)
-          }).error(function (data, status, request) {
-          })
-        },
-
         methods: {
           getPairs: function(e) {
             e.preventDefault();
