@@ -17,7 +17,7 @@ type ClassData struct {
 	GPA       float64 `json:"avggpa"`
 }
 
-func fetch() ([]Subject, []ClassData) {
+func fetch(year int) ([]Subject, []ClassData) {
 	for index := range subjects {
 		if err := subjects[index].fetchAndSetDeptID(); err != nil {
 			fmt.Print(err.Error())
@@ -25,7 +25,7 @@ func fetch() ([]Subject, []ClassData) {
 		}
 	}
 
-	allClassData, err := fetchClassData()
+	allClassData, err := fetchClassData(year)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -33,11 +33,11 @@ func fetch() ([]Subject, []ClassData) {
 	return subjects, allClassData
 }
 
-func fetchClassData() ([]ClassData, error) {
+func fetchClassData(year int) ([]ClassData, error) {
 	var allClassData []ClassData
 
 	for _, subject := range subjects {
-		uri := fmt.Sprintf(classesURI, subject.Short, subject.DeptID)
+		uri := fmt.Sprintf(classesURI, subject.Short, year, year, subject.DeptID)
 
 		classesDataHTTPResponse, err := http.Get(uri)
 		if err != nil {

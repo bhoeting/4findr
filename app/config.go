@@ -1,7 +1,7 @@
 package main
 
 const (
-	classesURI string = "http://grdist.miamioh.edu/php/getClasses.php?dept=%v&num=&inst=&from=2015&to=2015&iid=-1&did=%v&sem=&loc=O"
+	classesURI string = "http://grdist.miamioh.edu/php/getClasses.php?dept=%v&num=&inst=&from=%v&to=%v&iid=-1&did=%v&sem=&loc=O"
 	deptIdURI  string = "http://grdist.miamioh.edu/php/getDID.php?dept=%s"
 )
 

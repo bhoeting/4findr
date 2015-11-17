@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="stylesheet" href="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/css/bootstrap.css">
+  <meta charset="UTF-8">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title>4findr</title>
+  <style>
+    html, body {
+      height: 100%;
+    }
+
+    nav {
+      margin-bottom: 30px;
+    }
+
+    .form-control {
+      border-color: #F1294A;
+    }
+
+    .form-control:focus {
+      border-color: #F1294A;
+    }
+
+    .card > h4, .navbar-brand {
+      color: #F1294A;
+    }
+
+    .form-control, .btn-block {
+      border-radius: 0;
+    }
+
+    .navbar-brand {
+      margin: 0 auto;
+      float: none;
+      width: 250px;
+    }
+
+  </style>
+</head>
+<body id="app">
+  <nav class="navbar navbar-light bg-faded">
+    <div class="container">
+      <div class="navbar-brand" href="#">4findr <small>(not affiliated w/ Miami)</small></div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="col-md-6 col-md-offset-3">
+      <form v-on:submit="getPairs">
+        <div class="form-group">
+          <input class="form-control" type="text" v-model="query" placeholder="MTH251,ENG112">
+        </div>
+        <div class="form-group">
+          <button class="btn btn-block btn-danger-outline" type="submit">Search</button>
+        </div>
+      </form>
+      <div class="card card-block text-center" v-for="pair in pairs">
+        <h4 class="card-title">{{pair.gpa | gpaFormat}}</h4>
+        <p class="card-text">{{pair.professor.name}}</p>
+        <p class="card-text">
+          <small class="text-muted">{{pair.course.short_name}}</small>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue-resource/0.1.17/vue-resource.min.js"></script>
+  <script src="http://cdnjs.cloudflare.com/ajax/libs/vue/1.0.8/vue.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+  <script src="https://cdn.rawgit.com/twbs/bootstrap/v4-dev/dist/js/bootstrap.js"></script>
+
+  <script type="application/javascript">
+    Vue.use(VueResource);
+    Vue.filter('gpaFormat', function (value) {
+      return value.toFixed(2);
+    });
+
+    new Vue({
+        el: '#app',
+        data: {
+          query: '',
+          pairs: [],
+          courses: []
+        },
+
+        ready: function() {
+          this.$http.get('/api/v1/courses', function (data, status, request) {
+            this.$set('courses', data.results)
+          }).error(function (data, status, request) {
+          })
+        },
+
+        methods: {
+          getPairs: function(e) {
+            e.preventDefault();
+            var q = this.query;
+            this.$http.get('/api/v1/professor-course-pairs?courses=' + this.query, function (data) {
+              console.log(data)
+              this.$set('pairs', data.results)
+            })
+          }
+        }
+    })
+  </script>
+</body>
+</html>

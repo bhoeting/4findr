@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"net/http"
 	"reflect"
 	"strings"
 
@@ -43,7 +42,7 @@ func (app *App) run() {
 
 	// api/v1/professor-coures-pairs?courses=ENG111,MTH151
 	e.Get("/api/v1/professor-course-pairs", func(c *echo.Context) error {
-		courses := strings.Split(c.Request().URL.Query().Get("courses"), ",")
+		courses := strings.Split(strings.ToUpper(c.Request().URL.Query().Get("courses")), ",")
 		return getCollectionJSON(app.findProfCoursePairsOrderedByGPA(courses), c)
 	})
 
@@ -65,9 +64,11 @@ func (app *App) run() {
 		return getCollectionJSON(subjects, c)
 	})
 
-	e.Get("/", func(c *echo.Context) error {
-		return c.JSON(http.StatusOK, 10)
-	})
+	// e.Get("/", func(c *echo.Context) error {
+	// 	return c.JSON(http.StatusOK, 10)
+	// })
 
-	e.Run(":3000")
+	e.Index("index.html")
+
+	e.Run(":3030")
 }

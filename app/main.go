@@ -30,7 +30,13 @@ func main() {
 	if len(args) > 1 {
 		switch args[1] {
 		case "fetch":
-			subjects, classes := fetch()
+			subjects, classes := fetch(2015)
+			app.seedDB(subjects, classes)
+
+			subjects, classes = fetch(2014)
+			app.seedDB(subjects, classes)
+
+			subjects, classes = fetch(2013)
 			app.seedDB(subjects, classes)
 		default:
 			app.run()
