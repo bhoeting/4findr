@@ -3,16 +3,16 @@ A silly website to find the professors who have the highest class average GPAs f
 
 # Install
 
-  `cd $GOPATH`
+  cd $GOPATH
   
-  `git clone https://github.com/bhoeting/4findr.git`
+  git clone https://github.com/bhoeting/4findr.git
   
-  `cd src/github.com/bhoeting/4findr/app`
+  cd src/github.com/bhoeting/4findr/app
   
-  `go get`
+  go get
   
-  `go build -o 4findr`
+  go build -o 4findr
   
-  `./4findr fetch # import data from school`
+  ./4findr fetch # import data from school
   
-  `./4findr # run the server`
+  ./4findr # run the server
